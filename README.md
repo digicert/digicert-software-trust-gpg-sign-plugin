@@ -1,14 +1,17 @@
 # GPG signing with Software Trust Manager
 
-GPG Signing with Software Trust Manager Jenkins plugin is a streamlined GPG-based signing workflow that improves software security and seamlessly integrates with DevOps processes to sign binaries on **Windows** and **Linux**.
+GPG Signing with Software Trust Manager Jenkins plugin is a streamlined GPG-based signing workflow that improves
+software security and seamlessly integrates with DevOps processes to sign binaries on **Windows** and **Linux**.
 
-This plugin accelerates the installation and configuration of clients and various signing tools to help developers become signing-ready for Jenkins plugin workflows.
+This plugin accelerates the installation and configuration of clients and various signing tools to help developers
+become signing-ready for Jenkins plugin workflows.
 
 ## Software Trust Manager
 
-DigiCert® Software Trust Manager provides a solution to manage and automate your code signing workflows securely. 
+DigiCert® Software Trust Manager provides a solution to manage and automate your code signing workflows securely.
 
 **Software Trust Manager:**
+
 - Requires multi-factor authentication (MFA) for signing.
 - Prevents unauthorized access or misuse of keys and certificates.
 - Enforces consistency and compliance of security policies.
@@ -16,6 +19,7 @@ DigiCert® Software Trust Manager provides a solution to manage and automate y
 - Expedites remediation by giving you an audit history of all actions taken within your account.
 
 **You can use Software Trust Manager to securely:**
+
 - Generate and manage your credentials.
 - Create, edit, import, export, or delete keypairs.
 - Generate certificates using a keypair in your account.
@@ -25,13 +29,17 @@ DigiCert® Software Trust Manager provides a solution to manage and automate y
 
 ## DigiCert ONE account
 
-Software Trust Manager is part of the DigiCert ONE platform, which also includes DigiCert® Trust Lifecycle Manager, DigiCert® Document Trust Manager, and DigiCert® IoT Trust Manager, enabling organizations to manage their diverse PKI workflows from a single pane of glass.
+Software Trust Manager is part of the DigiCert ONE platform, which also includes DigiCert® Trust Lifecycle Manager,
+DigiCert® Document Trust Manager, and DigiCert® IoT Trust Manager, enabling organizations to manage their diverse PKI
+workflows from a single pane of glass.
 
-You require a DigiCert ONE account to access Software Trust Manager. If you do not have a DigiCert ONE account, you can request a 30-day free trial account from [DigiCert Sales.](https://www.digicert.com/contact-us)
+You require a DigiCert ONE account to access Software Trust Manager. If you do not have a DigiCert ONE account, you can
+request a 30-day free trial account from [DigiCert Sales.](https://www.digicert.com/contact-us)
 
 ## Use cases
 
 This is a list of popular use cases supported by Software Trust Manager. This is not a comprehensive list.
+
 - Container signing
 - Debian signing
 - Docker signing
@@ -41,17 +49,21 @@ This is a list of popular use cases supported by Software Trust Manager. This is
 ## Signing tools
 
 This is a list of popular signing tools supported by Software Trust Manager. This is not a comprehensive list.
+
 - Rpmsign
 - Debsign
 - Podman (for container signing)
 
 ## Documentation & Guides
 
-For comprehensive documentation, refer to: 
+For comprehensive documentation, refer to:
 [Jenkins plugin for GPG signing](https://docs.digicert.com/en/digicert-one/software-trust-manager/ci-cd-integrations/plugins/jenkins-plugin-for-gpg-signing.html)
 
 ## Feedback and issues
+
 [Contact DigiCert](https://www.digicert.com/support/pki-support)
 
 ## Learn more
-To learn more about centralizing and automating your code signing workflows with Software Trust Manager, reach out to [Sales/Enquiry](mailto:sales@digicert.com) or visit: https://www.digicert.com/software-trust-manager.
+
+To learn more about centralizing and automating your code signing workflows with Software Trust Manager, reach out
+to [Sales/Enquiry](mailto:sales@digicert.com) or visit: https://www.digicert.com/software-trust-manager.

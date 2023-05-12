@@ -1,32 +1,28 @@
+//The MIT License
+//
+//Copyright 2023
+//
+//Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+//
+//The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 package io.jenkins.plugins.digicert;
 
-
-
 import hudson.EnvVars;
-
+import hudson.model.TaskListener;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
-
 import hudson.slaves.NodeProperty;
-
 import hudson.slaves.NodePropertyDescriptor;
-
 import hudson.util.DescribableList;
-
 import jenkins.model.Jenkins;
 
-import java.io.IOException;
-
-import java.util.*;
-
 import java.io.*;
-
 import java.util.List;
+import java.util.Map;
 
-
-import hudson.model.TaskListener;
-
-
-public class Linux  {
+public class Linux {
 
     private final TaskListener listener;
 
@@ -45,14 +41,11 @@ public class Linux  {
     private final char c = '-';
 
     String dir = System.getProperty("user.dir");
-
+    ProcessBuilder processBuilder = new ProcessBuilder();
     private Integer result;
 
-    ProcessBuilder processBuilder = new ProcessBuilder();
 
-
-
-    public Linux(TaskListener listener,  String SM_HOST, String SM_API_KEY, String SM_CLIENT_CERT_FILE, String SM_CLIENT_CERT_PASSWORD, String pathVar) {
+    public Linux(TaskListener listener, String SM_HOST, String SM_API_KEY, String SM_CLIENT_CERT_FILE, String SM_CLIENT_CERT_PASSWORD, String pathVar) {
 
         this.listener = listener;
 
@@ -69,17 +62,16 @@ public class Linux  {
     }
 
 
-
     public Integer install(String os) {
 
-        this.listener.getLogger().println("\nAgent type: "+os);
+        this.listener.getLogger().println("\nAgent type: " + os);
 
-        this.listener.getLogger().println("\nIstalling SMCTL from: https://"+SM_HOST.substring(19).replaceAll("/$","")+"/signingmanager/api-ui/v1/releases/noauth/smtools-linux-x64.tar.gz/download \n");
-        executeCommand("curl -X GET https://"+SM_HOST.substring(19).replaceAll("/$","")+"/signingmanager/api-ui/v1/releases/noauth/smtools-linux-x64.tar.gz/download/ -o smtools-linux-x64.tar.gz");
+        this.listener.getLogger().println("\nIstalling SMCTL from: https://" + SM_HOST.substring(19).replaceAll("/$", "") + "/signingmanager/api-ui/v1/releases/noauth/smtools-linux-x64.tar.gz/download \n");
+        executeCommand("curl -X GET https://" + SM_HOST.substring(19).replaceAll("/$", "") + "/signingmanager/api-ui/v1/releases/noauth/smtools-linux-x64.tar.gz/download/ -o smtools-linux-x64.tar.gz");
 
         result = executeCommand("tar xvf smtools-linux-x64.tar.gz > /dev/null");
 
-        if (result==0)
+        if (result == 0)
 
             this.listener.getLogger().println("\nSMCTL Istallation Complete\n");
 
@@ -91,12 +83,12 @@ public class Linux  {
 
         }
 
-        dir = dir+File.separator+"smtools-linux-x64";
+        dir = dir + File.separator + "smtools-linux-x64";
 
-        this.listener.getLogger().println("\nInstalling SCD from: https://"+SM_HOST.substring(19).replaceAll("/$","")+"/signingmanager/api-ui/v1/releases/noauth/ssm-scd-linux-x64/download \n");
-        executeCommand("curl -X GET  https://"+SM_HOST.substring(19).replaceAll("/$", "")+"/signingmanager/api-ui/v1/releases/noauth/ssm-scd-linux-x64/download -o ssm-scd");
+        this.listener.getLogger().println("\nInstalling SCD from: https://" + SM_HOST.substring(19).replaceAll("/$", "") + "/signingmanager/api-ui/v1/releases/noauth/ssm-scd-linux-x64/download \n");
+        executeCommand("curl -X GET  https://" + SM_HOST.substring(19).replaceAll("/$", "") + "/signingmanager/api-ui/v1/releases/noauth/ssm-scd-linux-x64/download -o ssm-scd");
 
-        if (result==0)
+        if (result == 0)
 
             this.listener.getLogger().println("\nSCD Istallation Complete\n");
 
@@ -106,7 +98,7 @@ public class Linux  {
 
         }
 
-        result = executeCommand("sudo chmod -R +x "+dir);
+        result = executeCommand("sudo chmod -R +x " + dir);
 
         return result;
 
@@ -119,9 +111,7 @@ public class Linux  {
     }
 
 
-
     public Integer createFile(String path, String str) {
-
 
 
         File file = new File(path); //initialize File object and passing path as argument
@@ -165,7 +155,6 @@ public class Linux  {
     }
 
 
-
     public void setEnvVar(String key, String value) {
 
         try {
@@ -173,17 +162,14 @@ public class Linux  {
             Jenkins instance = Jenkins.getInstance();
 
 
-
             DescribableList<NodeProperty<?>, NodePropertyDescriptor> globalNodeProperties = instance.getGlobalNodeProperties();
 
             List<EnvironmentVariablesNodeProperty> envVarsNodePropertyList = globalNodeProperties.getAll(EnvironmentVariablesNodeProperty.class);
 
 
-
             EnvironmentVariablesNodeProperty newEnvVarsNodeProperty = null;
 
             EnvVars envVars = null;
-
 
 
             if (envVarsNodePropertyList == null || envVarsNodePropertyList.size() == 0) {
@@ -206,9 +192,7 @@ public class Linux  {
 
             instance.save();
 
-        }
-
-        catch (IOException e) {
+        } catch (IOException e) {
 
             e.printStackTrace(this.listener.error(e.getMessage()));
 
@@ -217,34 +201,32 @@ public class Linux  {
     }
 
 
-
     public Integer executeCommand(String command) {
-
 
 
         try {
 
-            processBuilder.command(prompt,c+"c",command);
+            processBuilder.command(prompt, c + "c", command);
 
             Map<String, String> env = processBuilder.environment();
 
-             if(SM_API_KEY!=null)
+            if (SM_API_KEY != null)
 
-                 env.put("SM_API_KEY", SM_API_KEY);
+                env.put("SM_API_KEY", SM_API_KEY);
 
-             if(SM_CLIENT_CERT_PASSWORD!=null)
+            if (SM_CLIENT_CERT_PASSWORD != null)
 
-                 env.put("SM_CLIENT_CERT_PASSWORD", SM_CLIENT_CERT_PASSWORD);
+                env.put("SM_CLIENT_CERT_PASSWORD", SM_CLIENT_CERT_PASSWORD);
 
-             if(SM_CLIENT_CERT_FILE!=null)
+            if (SM_CLIENT_CERT_FILE != null)
 
-                 env.put("SM_CLIENT_CERT_FILE", SM_CLIENT_CERT_FILE);
+                env.put("SM_CLIENT_CERT_FILE", SM_CLIENT_CERT_FILE);
 
-             if(SM_HOST!=null)
+            if (SM_HOST != null)
 
-                 env.put("SM_HOST", SM_HOST);
+                env.put("SM_HOST", SM_HOST);
 
-             env.put("PATH",System.getenv("PATH")+":/"+dir+"/smtools-linux-x64/");
+            env.put("PATH", System.getenv("PATH") + ":/" + dir + "/smtools-linux-x64/");
 
             processBuilder.directory(new File(dir));
 
@@ -253,13 +235,10 @@ public class Linux  {
             Process process = processBuilder.start();
 
 
-
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
 
-
             String line;
-
 
 
             while ((line = reader.readLine()) != null) {
@@ -296,9 +275,7 @@ public class Linux  {
 
             return 1;
 
-        }
-
-        catch (Exception e) {
+        } catch (Exception e) {
 
             e.printStackTrace(this.listener.error(e.getMessage()));
 
@@ -309,24 +286,19 @@ public class Linux  {
     }
 
 
+    public void deleteFiles() {
 
-    public void deleteFiles(){
-
-        File directory = new File("/"+System.getProperty("user.name")+"/.gnupg");
+        File directory = new File("/" + System.getProperty("user.name") + "/.gnupg");
 
         File[] files = directory.listFiles();
 
-        for (File f : files)
+        for (File f : files) {
 
-        {
-
-            if (f.getName().contains("kbx"))
-
-            {
+            if (f.getName().contains("kbx")) {
 
                 f.delete();
 
-                this.listener.getLogger().println("\nDeleted file: "+f.getName()+"\n");
+                this.listener.getLogger().println("\nDeleted file: " + f.getName() + "\n");
 
             }
 
@@ -335,13 +307,12 @@ public class Linux  {
     }
 
 
-
     public Integer call(String os) throws IOException {
 
 
         result = install(os);
 
-        if (result==0)
+        if (result == 0)
 
             this.listener.getLogger().println("\nClient Tools Istallation Complete\n");
 
@@ -357,7 +328,7 @@ public class Linux  {
 
         result = executeCommand("sudo apt-get --yes --assume-yes install gnupg");
 
-        if (result==0)
+        if (result == 0)
 
             this.listener.getLogger().println("\nGPG Istallation Complete\n");
 
@@ -372,25 +343,23 @@ public class Linux  {
         result = executeCommand("gpgconf --kill all");
 
         this.listener.getLogger().println("\nCreating GPG Config File\n");
-       
+
 
         String str = "verbose\ndebug-all\n" +
 
-                "log-file /"+System.getProperty("user.name")+"/.gnupg/gpg-agent.log\n" +
+                "log-file /" + System.getProperty("user.name") + "/.gnupg/gpg-agent.log\n" +
 
-                "scdaemon-program "+dir+"/ssm-scd\n";
+                "scdaemon-program " + dir + "/ssm-scd\n";
 
-        String configPath = "/"+System.getProperty("user.name")+"/.gnupg/gpg-agent.conf";
-
+        String configPath = "/" + System.getProperty("user.name") + "/.gnupg/gpg-agent.conf";
 
 
         result = createFile(configPath, str);
 
 
+        if (result == 0)
 
-        if (result==0)
-
-            this.listener.getLogger().println("\nGPG config file successfully created at location: "+configPath+"\n");
+            this.listener.getLogger().println("\nGPG config file successfully created at location: " + configPath + "\n");
 
         else {
 
@@ -400,7 +369,7 @@ public class Linux  {
 
         }
 
-        setEnvVar("PATH",this.pathVar+":/"+dir);
+        setEnvVar("PATH", this.pathVar + ":/" + dir);
 
         executeCommand("gpgconf --kill all");
 
