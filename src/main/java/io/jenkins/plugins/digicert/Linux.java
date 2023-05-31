@@ -27,17 +27,13 @@ public class Linux {
     private final TaskListener listener;
 
     private final String SM_HOST;
-
+    // lgtm[jenkins/plaintext-storage]
     private final String SM_API_KEY;
-
     private final String SM_CLIENT_CERT_FILE;
-
+    // lgtm[jenkins/plaintext-storage]
     private final String SM_CLIENT_CERT_PASSWORD;
-
     private final String pathVar;
-
     private final String prompt = "bash";
-
     private final char c = '-';
 
     String dir = System.getProperty("user.dir");
