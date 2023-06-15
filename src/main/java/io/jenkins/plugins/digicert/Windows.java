@@ -17,8 +17,13 @@ import hudson.slaves.NodeProperty;
 import hudson.slaves.NodePropertyDescriptor;
 import hudson.util.DescribableList;
 import jenkins.model.Jenkins;
-
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -63,36 +68,38 @@ public class Windows {
         }
         File destFile = new File(dir + "\\ssm-scd.exe");
         if (destFile.exists()) {
-            destFile.delete();
+            if(!destFile.delete())
+                return 1;
         }
         this.listener.getLogger().println("\nInstalling SCD from: https://" + SM_HOST.substring(19).replaceAll("/$", "") + "/signingmanager/api-ui/v1/releases/noauth/ssm-scd-windows-x64/download \n");
         executeCommand("curl -X GET  https://" + SM_HOST.substring(19).replaceAll("/$", "") + "/signingmanager/api-ui/v1/releases/noauth/ssm-scd-windows-x64/download -o ssm-scd.exe");
         result = moveFile();
-//        if (result==0)
-//            this.listener.getLogger().println("\nSCD Istallation Complete\n");
-//        else {
-//            this.listener.getLogger().println("\nSCD Istallation Failed\n");
-//        }
-//        this.listener.getLogger().println("Verifying Installation\n");
-//        executeCommand("smksp_registrar.exe list > NUL");
-//        executeCommand("smctl.exe keypair ls > NUL");
-        if (SM_HOST != null && SM_API_KEY != null && SM_CLIENT_CERT_FILE != null && SM_CLIENT_CERT_PASSWORD != null) {
+
+        if (SM_API_KEY != null && SM_CLIENT_CERT_FILE != null && SM_CLIENT_CERT_PASSWORD != null) {
             executeCommand("C:\\Windows\\System32\\certutil.exe -csp \"DigiCert Signing Manager KSP\" -key -user > NUL 2> NUL");
             executeCommand("smksp_cert_sync.exe > NUL 2> NUL");
             executeCommand("smctl windows certsync > NUL 2> NUL");
         }
-//        executeCommand("smksp_cert_sync.exe > NUL 2> NUL");
-//        executeCommand("smctl windows certsync > NUL 2> NUL");
-//        this.listener.getLogger().println("Installation Verification Complete\n");
+
         return result;
     }
 
     public Integer moveFile() {
         try {
-            File destFile = new File("C:\\Program Files\\DigiCert\\DigiCert One Signing Manager Tools\\ssm-scd.exe");
+            String scdPath;
+            try (InputStream input = Windows.class.getResourceAsStream("config.properties")) {
+                Properties prop = new Properties();
+                prop.load(input);
+                scdPath = prop.getProperty("scdPath");
+            } catch (IOException e) {
+                e.printStackTrace(this.listener.error(e.getMessage()));
+                return 1;
+            }
+            File destFile = new File(scdPath);
             if (destFile.exists()) {
                 this.listener.getLogger().println("\nSCD already exists, replacing with newer version\n");
-                destFile.delete();
+                if(destFile.delete())
+                    this.listener.getLogger().println("\nSCD replaced with newer version\n");;
             }
             if (destFile.exists()) {
                 this.listener.getLogger().println("\nSCD could not be replaced because it is open in another program," +
@@ -101,7 +108,7 @@ public class Windows {
             }
             Path temp = Files.move
                     (Paths.get(dir + "\\ssm-scd.exe"),
-                            Paths.get("C:\\Program Files\\DigiCert\\DigiCert One Signing Manager Tools\\ssm-scd.exe"));
+                            Paths.get(scdPath));
             if (temp != null) {
                 this.listener.getLogger().println("\nSCD Installation Complete\n");
                 return 0;
@@ -118,17 +125,20 @@ public class Windows {
     public Integer createFile(String path, String str) {
 
         File file = new File(path); //initialize File object and passing path as argument
-        boolean result;
+        FileOutputStream fos = null;
         try {
-            result = file.createNewFile();  //creates a new file
+            if(file.createNewFile())
+                ;
             try {
                 String name = file.getCanonicalPath();
-                FileOutputStream fos = new FileOutputStream(name, false);  // true for append mode
-                byte[] b = str.getBytes();       //converts string into bytes
+                fos = new FileOutputStream(name, false);  // true for append mode
+                byte[] b = str.getBytes(StandardCharsets.UTF_8);       //converts string into bytes
                 fos.write(b);           //writes bytes into file
                 fos.close();            //close the file
                 return 0;
             } catch (Exception e) {
+                if (fos!=null)
+                    fos.close();
                 e.printStackTrace(this.listener.error(e.getMessage()));
                 return 1;
             }
@@ -140,7 +150,7 @@ public class Windows {
 
     public void setEnvVar(String key, String value) {
         try {
-            Jenkins instance = Jenkins.getInstance();
+            Jenkins instance = Jenkins.get();
 
             DescribableList<NodeProperty<?>, NodePropertyDescriptor> globalNodeProperties = instance.getGlobalNodeProperties();
             List<EnvironmentVariablesNodeProperty> envVarsNodePropertyList = globalNodeProperties.getAll(EnvironmentVariablesNodeProperty.class);
@@ -153,7 +163,6 @@ public class Windows {
                 globalNodeProperties.add(newEnvVarsNodeProperty);
                 envVars = newEnvVarsNodeProperty.getEnvVars();
             } else {
-                //We do have a envVars List
                 envVars = envVarsNodePropertyList.get(0).getEnvVars();
             }
             envVars.put(key, value);
@@ -181,7 +190,7 @@ public class Windows {
             processBuilder.redirectErrorStream(true);
             Process process = processBuilder.start();
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(),StandardCharsets.UTF_8));
 
             String line;
 
@@ -189,11 +198,7 @@ public class Windows {
                 this.listener.getLogger().println(line);
             }
             exitCode = process.waitFor();
-//            try {
-//                if (exitCode != 0) throw new Exception("Command failed");
-//            } catch (Exception e) {
-//                e.printStackTrace(this.listener.error(e.getMessage()));
-//            }
+            reader.close();
         } catch (IOException e) {
             e.printStackTrace(this.listener.error(e.getMessage()));
             return 1;
@@ -214,16 +219,7 @@ public class Windows {
             try (InputStream input = Windows.class.getResourceAsStream("config.properties")) {
 
                 Properties prop = new Properties();
-
-                if (input == null) {
-                    this.listener.getLogger().println("Unable to find config.properties");
-                    return 1;
-                }
-
-                //load a properties file from class path, inside static method
                 prop.load(input);
-
-                //get the property value and print it out
                 gpgUrl = prop.getProperty("gpgUrl");
 //                this.listener.getLogger().println(prop.getProperty("gpgUrl"));
             } catch (IOException e) {
@@ -242,10 +238,14 @@ public class Windows {
     public void deleteFiles() {
         File directory = new File("C:\\Users\\" + System.getProperty("user.name") + "\\AppData\\Roaming\\gnupg");
         File[] files = directory.listFiles();
+        if(files==null)
+            return;
         for (File f : files) {
             if (f.getName().contains("kbx")) {
-                f.delete();
-                this.listener.getLogger().println("\nDeleted file: " + f.getName() + "\n");
+                if(f.delete())
+                    this.listener.getLogger().println("\nDeleted file: " + f.getName() + "\n");
+                else
+                    this.listener.getLogger().println("\nFailed to delete file: " + f.getName() + "\n");
             }
         }
     }

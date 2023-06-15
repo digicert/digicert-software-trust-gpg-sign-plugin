@@ -17,8 +17,13 @@ import hudson.slaves.NodeProperty;
 import hudson.slaves.NodePropertyDescriptor;
 import hudson.util.DescribableList;
 import jenkins.model.Jenkins;
-
-import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.io.File;
+import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.FileOutputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -33,8 +38,8 @@ public class Linux {
     // lgtm[jenkins/plaintext-storage]
     private final String SM_CLIENT_CERT_PASSWORD;
     private final String pathVar;
-    private final String prompt = "bash";
-    private final char c = '-';
+    private final static String prompt = "bash";
+    private final static char c = '-';
 
     String dir = System.getProperty("user.dir");
     ProcessBuilder processBuilder = new ProcessBuilder();
@@ -97,13 +102,6 @@ public class Linux {
         result = executeCommand("sudo chmod -R +x " + dir);
 
         return result;
-
-//        this.listener.getLogger().println("Verifying Installation\n");
-
-//        executeCommand("./smctl keypair ls > /dev/null");
-
-//        this.listener.getLogger().println("Installation Verification Complete\n");
-
     }
 
 
@@ -111,20 +109,18 @@ public class Linux {
 
 
         File file = new File(path); //initialize File object and passing path as argument
-
-        boolean result;
-
+        FileOutputStream fos = null;
         try {
 
-            result = file.createNewFile();  //creates a new file
-
+            if(file.createNewFile())
+                ;
             try {
 
                 String name = file.getCanonicalPath();
 
-                FileOutputStream fos = new FileOutputStream(name, false);  // true for append mode
+                fos = new FileOutputStream(name, false);  // true for append mode
 
-                byte[] b = str.getBytes();       //converts string into bytes
+                byte[] b = str.getBytes(StandardCharsets.UTF_8);        //converts string into bytes
 
                 fos.write(b);           //writes bytes into file
 
@@ -133,7 +129,8 @@ public class Linux {
                 return 0;
 
             } catch (Exception e) {
-
+                if (fos!=null)
+                    fos.close();
                 e.printStackTrace(this.listener.error(e.getMessage()));
 
                 return 1;
@@ -155,7 +152,7 @@ public class Linux {
 
         try {
 
-            Jenkins instance = Jenkins.getInstance();
+            Jenkins instance = Jenkins.get();
 
 
             DescribableList<NodeProperty<?>, NodePropertyDescriptor> globalNodeProperties = instance.getGlobalNodeProperties();
@@ -177,8 +174,6 @@ public class Linux {
                 envVars = newEnvVarsNodeProperty.getEnvVars();
 
             } else {
-
-                //We do have a envVars List
 
                 envVars = envVarsNodePropertyList.get(0).getEnvVars();
 
@@ -231,7 +226,7 @@ public class Linux {
             Process process = processBuilder.start();
 
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
 
 
             String line;
@@ -245,19 +240,9 @@ public class Linux {
 
             int exitCode = process.waitFor();
 
+            reader.close();
+
             return exitCode;
-
-//            try {
-
-//                if (exitCode != 0) throw new Exception("Command failed");
-
-//            }
-
-//            catch (Exception e) {
-
-//                e.printStackTrace(this.listener.error(e.getMessage()));
-
-//            }
 
         } catch (IOException e) {
 
@@ -288,14 +273,16 @@ public class Linux {
 
         File[] files = directory.listFiles();
 
+        if(files==null)
+            return;
         for (File f : files) {
 
             if (f.getName().contains("kbx")) {
 
-                f.delete();
-
-                this.listener.getLogger().println("\nDeleted file: " + f.getName() + "\n");
-
+                if(f.delete())
+                    this.listener.getLogger().println("\nDeleted file: " + f.getName() + "\n");
+                else
+                    this.listener.getLogger().println("\nFailed to delete file: " + f.getName() + "\n");
             }
 
         }

@@ -19,7 +19,6 @@ import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
-
 import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
