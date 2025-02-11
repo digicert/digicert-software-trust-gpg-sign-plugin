@@ -10,19 +10,12 @@
 
 package io.jenkins.plugins.digicert;
 
-import hudson.EnvVars;
-import hudson.model.TaskListener;
-import hudson.slaves.EnvironmentVariablesNodeProperty;
-import hudson.slaves.NodeProperty;
-import hudson.slaves.NodePropertyDescriptor;
-import hudson.util.DescribableList;
-import jenkins.model.Jenkins;
-import java.io.File;
-import java.io.IOException;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,6 +23,14 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import hudson.EnvVars;
+import hudson.model.TaskListener;
+import hudson.slaves.EnvironmentVariablesNodeProperty;
+import hudson.slaves.NodeProperty;
+import hudson.slaves.NodePropertyDescriptor;
+import hudson.util.DescribableList;
+import jenkins.model.Jenkins;
 
 public class Windows {
     private final TaskListener listener;
@@ -46,7 +47,8 @@ public class Windows {
     ProcessBuilder processBuilder = new ProcessBuilder();
     private Integer result;
 
-    public Windows(TaskListener listener, String SM_HOST, String SM_API_KEY, String SM_CLIENT_CERT_FILE, String SM_CLIENT_CERT_PASSWORD, String pathVar) {
+    public Windows(TaskListener listener, String SM_HOST, String SM_API_KEY, String SM_CLIENT_CERT_FILE,
+            String SM_CLIENT_CERT_PASSWORD, String pathVar) {
         this.listener = listener;
         this.SM_HOST = SM_HOST;
         this.SM_API_KEY = SM_API_KEY;
@@ -57,8 +59,11 @@ public class Windows {
 
     public Integer install(String os) {
         this.listener.getLogger().println("\nAgent type: " + os);
-        this.listener.getLogger().println("\nInstalling SMCTL from: https://" + SM_HOST.substring(19).replaceAll("/$", "") + "/signingmanager/api-ui/v1/releases/noauth/smtools-windows-x64.msi/download \n");
-        executeCommand("curl -X GET  https://" + SM_HOST.substring(19).replaceAll("/$", "") + "/signingmanager/api-ui/v1/releases/noauth/smtools-windows-x64.msi/download -o smtools-windows-x64.msi");
+        this.listener.getLogger()
+                .println("\nInstalling SMCTL from: https://" + SM_HOST.substring(19).replaceAll("/$", "")
+                        + "/signingmanager/api-ui/v1/releases/noauth/smtools-windows-x64.msi/download \n");
+        executeCommand("curl -X GET  https://" + SM_HOST.substring(19).replaceAll("/$", "")
+                + "/signingmanager/api-ui/v1/releases/noauth/smtools-windows-x64.msi/download -o smtools-windows-x64.msi");
         result = executeCommand("msiexec /i smtools-windows-x64.msi /quiet /qn");
         if (result == 0)
             this.listener.getLogger().println("\nSMCTL Istallation Complete\n");
@@ -68,15 +73,18 @@ public class Windows {
         }
         File destFile = new File(dir + "\\ssm-scd.exe");
         if (destFile.exists()) {
-            if(!destFile.delete())
+            if (!destFile.delete())
                 return 1;
         }
-        this.listener.getLogger().println("\nInstalling SCD from: https://" + SM_HOST.substring(19).replaceAll("/$", "") + "/signingmanager/api-ui/v1/releases/noauth/ssm-scd-windows-x64/download \n");
-        executeCommand("curl -X GET  https://" + SM_HOST.substring(19).replaceAll("/$", "") + "/signingmanager/api-ui/v1/releases/noauth/ssm-scd-windows-x64/download -o ssm-scd.exe");
+        this.listener.getLogger().println("\nInstalling SCD from: https://" + SM_HOST.substring(19).replaceAll("/$", "")
+                + "/signingmanager/api-ui/v1/releases/noauth/ssm-scd-windows-x64/download \n");
+        executeCommand("curl -X GET  https://" + SM_HOST.substring(19).replaceAll("/$", "")
+                + "/signingmanager/api-ui/v1/releases/noauth/ssm-scd-windows-x64/download -o ssm-scd.exe");
         result = moveFile();
 
         if (SM_API_KEY != null && SM_CLIENT_CERT_FILE != null && SM_CLIENT_CERT_PASSWORD != null) {
-            executeCommand("C:\\Windows\\System32\\certutil.exe -csp \"DigiCert Signing Manager KSP\" -key -user > NUL 2> NUL");
+            executeCommand(
+                    "C:\\Windows\\System32\\certutil.exe -csp \"DigiCert Signing Manager KSP\" -key -user > NUL 2> NUL");
             executeCommand("smksp_cert_sync.exe > NUL 2> NUL");
             executeCommand("smctl windows certsync > NUL 2> NUL");
         }
@@ -98,17 +106,17 @@ public class Windows {
             File destFile = new File(scdPath);
             if (destFile.exists()) {
                 this.listener.getLogger().println("\nSCD already exists, replacing with newer version\n");
-                if(destFile.delete())
-                    this.listener.getLogger().println("\nSCD replaced with newer version\n");;
+                if (destFile.delete())
+                    this.listener.getLogger().println("\nSCD replaced with newer version\n");
+                ;
             }
             if (destFile.exists()) {
                 this.listener.getLogger().println("\nSCD could not be replaced because it is open in another program," +
                         " using the existing version\n");
                 return 0;
             }
-            Path temp = Files.move
-                    (Paths.get(dir + "\\ssm-scd.exe"),
-                            Paths.get(scdPath));
+            Path temp = Files.move(Paths.get(dir + "\\ssm-scd.exe"),
+                    Paths.get(scdPath));
             if (temp != null) {
                 this.listener.getLogger().println("\nSCD Installation Complete\n");
                 return 0;
@@ -124,20 +132,20 @@ public class Windows {
 
     public Integer createFile(String path, String str) {
 
-        File file = new File(path); //initialize File object and passing path as argument
+        File file = new File(path); // initialize File object and passing path as argument
         FileOutputStream fos = null;
         try {
-            if(file.createNewFile())
+            if (file.createNewFile())
                 ;
             try {
                 String name = file.getCanonicalPath();
-                fos = new FileOutputStream(name, false);  // true for append mode
-                byte[] b = str.getBytes(StandardCharsets.UTF_8);       //converts string into bytes
-                fos.write(b);           //writes bytes into file
-                fos.close();            //close the file
+                fos = new FileOutputStream(name, false); // true for append mode
+                byte[] b = str.getBytes(StandardCharsets.UTF_8); // converts string into bytes
+                fos.write(b); // writes bytes into file
+                fos.close(); // close the file
                 return 0;
             } catch (Exception e) {
-                if (fos!=null)
+                if (fos != null)
                     fos.close();
                 e.printStackTrace(this.listener.error(e.getMessage()));
                 return 1;
@@ -152,8 +160,10 @@ public class Windows {
         try {
             Jenkins instance = Jenkins.get();
 
-            DescribableList<NodeProperty<?>, NodePropertyDescriptor> globalNodeProperties = instance.getGlobalNodeProperties();
-            List<EnvironmentVariablesNodeProperty> envVarsNodePropertyList = globalNodeProperties.getAll(EnvironmentVariablesNodeProperty.class);
+            DescribableList<NodeProperty<?>, NodePropertyDescriptor> globalNodeProperties = instance
+                    .getGlobalNodeProperties();
+            List<EnvironmentVariablesNodeProperty> envVarsNodePropertyList = globalNodeProperties
+                    .getAll(EnvironmentVariablesNodeProperty.class);
 
             EnvironmentVariablesNodeProperty newEnvVarsNodeProperty = null;
             EnvVars envVars = null;
@@ -178,19 +188,21 @@ public class Windows {
             processBuilder.command(prompt, c + "c", command);
             Map<String, String> env = processBuilder.environment();
             if (SM_API_KEY != null)
-                env.put("SM_API_KEY", SM_API_KEY);
+                env.put(Constants.API_KEY_ID, SM_API_KEY);
             if (SM_CLIENT_CERT_PASSWORD != null)
-                env.put("SM_CLIENT_CERT_PASSWORD", SM_CLIENT_CERT_PASSWORD);
+                env.put(Constants.CLIENT_CERT_PASSWORD_ID, SM_CLIENT_CERT_PASSWORD);
             if (SM_CLIENT_CERT_FILE != null)
-                env.put("SM_CLIENT_CERT_FILE", SM_CLIENT_CERT_FILE);
+                env.put(Constants.CLIENT_CERT_FILE_ID, SM_CLIENT_CERT_FILE);
             if (SM_HOST != null)
-                env.put("SM_HOST", SM_HOST);
-            env.put("path", System.getenv("path") + ";C:\\Program Files\\DigiCert\\DigiCert One Signing Manager Tools;C:\\Program Files (x86)\\GnuPG\\bin");
+                env.put(Constants.HOST_ID, SM_HOST);
+            env.put("path", System.getenv("path")
+                    + ";C:\\Program Files\\DigiCert\\DigiCert One Signing Manager Tools;C:\\Program Files (x86)\\GnuPG\\bin");
             processBuilder.directory(new File(dir));
             processBuilder.redirectErrorStream(true);
             Process process = processBuilder.start();
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(),StandardCharsets.UTF_8));
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
 
             String line;
 
@@ -221,7 +233,7 @@ public class Windows {
                 Properties prop = new Properties();
                 prop.load(input);
                 gpgUrl = prop.getProperty("gpgUrl");
-//                this.listener.getLogger().println(prop.getProperty("gpgUrl"));
+                // this.listener.getLogger().println(prop.getProperty("gpgUrl"));
             } catch (IOException e) {
                 e.printStackTrace(this.listener.error(e.getMessage()));
                 return 1;
@@ -238,11 +250,11 @@ public class Windows {
     public void deleteFiles() {
         File directory = new File("C:\\Users\\" + System.getProperty("user.name") + "\\AppData\\Roaming\\gnupg");
         File[] files = directory.listFiles();
-        if(files==null)
+        if (files == null)
             return;
         for (File f : files) {
             if (f.getName().contains("kbx")) {
-                if(f.delete())
+                if (f.delete())
                     this.listener.getLogger().println("\nDeleted file: " + f.getName() + "\n");
                 else
                     this.listener.getLogger().println("\nFailed to delete file: " + f.getName() + "\n");
@@ -269,20 +281,24 @@ public class Windows {
         }
         this.listener.getLogger().println("\nCreating GPG Config File\n");
         String str = "verbose\ndebug-all\n" +
-                "log-file C:\\Users\\" + System.getProperty("user.name") + "\\AppData\\Roaming\\gnupg\\gpg-agent.log\n" +
+                "log-file C:\\Users\\" + System.getProperty("user.name") + "\\AppData\\Roaming\\gnupg\\gpg-agent.log\n"
+                +
                 "scdaemon-program \"C:\\Program Files\\DigiCert\\DigiCert One Signing Manager Tools\\ssm-scd.exe\"\n";
 
-        String configPath = "C:\\Users\\" + System.getProperty("user.name") + "\\AppData\\Roaming\\gnupg\\gpg-agent.conf";
+        String configPath = "C:\\Users\\" + System.getProperty("user.name")
+                + "\\AppData\\Roaming\\gnupg\\gpg-agent.conf";
 
         result = createFile(configPath, str);
 
         if (result == 0)
-            this.listener.getLogger().println("\nGPG config file successfully created at location: " + configPath + "\n");
+            this.listener.getLogger()
+                    .println("\nGPG config file successfully created at location: " + configPath + "\n");
         else {
             this.listener.getLogger().println("\nFailed to create GPG config file\n");
             return result;
         }
-        setEnvVar("PATH", this.pathVar + ";" + dir + ";C:\\Program Files\\DigiCert\\DigiCert One Signing Manager Tools;C:\\Program Files (x86)\\GnuPG\\bin");
+        setEnvVar("PATH", this.pathVar + ";" + dir
+                + ";C:\\Program Files\\DigiCert\\DigiCert One Signing Manager Tools;C:\\Program Files (x86)\\GnuPG\\bin");
         executeCommand("gpgconf --kill all");
         result = executeCommand("gpg --card-status");
         deleteFiles();
@@ -291,4 +307,3 @@ public class Windows {
         return result;
     }
 }
-

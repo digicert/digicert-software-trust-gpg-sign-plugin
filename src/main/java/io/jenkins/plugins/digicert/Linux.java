@@ -10,6 +10,15 @@
 
 package io.jenkins.plugins.digicert;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+
 import hudson.EnvVars;
 import hudson.model.TaskListener;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
@@ -17,15 +26,6 @@ import hudson.slaves.NodeProperty;
 import hudson.slaves.NodePropertyDescriptor;
 import hudson.util.DescribableList;
 import jenkins.model.Jenkins;
-import java.nio.charset.StandardCharsets;
-import java.io.File;
-import java.io.IOException;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.FileOutputStream;
-import java.util.List;
-import java.util.Map;
 
 public class Linux {
 
@@ -45,8 +45,8 @@ public class Linux {
     ProcessBuilder processBuilder = new ProcessBuilder();
     private Integer result;
 
-
-    public Linux(TaskListener listener, String SM_HOST, String SM_API_KEY, String SM_CLIENT_CERT_FILE, String SM_CLIENT_CERT_PASSWORD, String pathVar) {
+    public Linux(TaskListener listener, String SM_HOST, String SM_API_KEY, String SM_CLIENT_CERT_FILE,
+            String SM_CLIENT_CERT_PASSWORD, String pathVar) {
 
         this.listener = listener;
 
@@ -62,13 +62,15 @@ public class Linux {
 
     }
 
-
     public Integer install(String os) {
 
         this.listener.getLogger().println("\nAgent type: " + os);
 
-        this.listener.getLogger().println("\nIstalling SMCTL from: https://" + SM_HOST.substring(19).replaceAll("/$", "") + "/signingmanager/api-ui/v1/releases/noauth/smtools-linux-x64.tar.gz/download \n");
-        executeCommand("curl -X GET https://" + SM_HOST.substring(19).replaceAll("/$", "") + "/signingmanager/api-ui/v1/releases/noauth/smtools-linux-x64.tar.gz/download/ -o smtools-linux-x64.tar.gz");
+        this.listener.getLogger()
+                .println("\nIstalling SMCTL from: https://" + SM_HOST.substring(19).replaceAll("/$", "")
+                        + "/signingmanager/api-ui/v1/releases/noauth/smtools-linux-x64.tar.gz/download \n");
+        executeCommand("curl -X GET https://" + SM_HOST.substring(19).replaceAll("/$", "")
+                + "/signingmanager/api-ui/v1/releases/noauth/smtools-linux-x64.tar.gz/download/ -o smtools-linux-x64.tar.gz");
 
         result = executeCommand("tar xvf smtools-linux-x64.tar.gz > /dev/null");
 
@@ -86,8 +88,10 @@ public class Linux {
 
         dir = dir + File.separator + "smtools-linux-x64";
 
-        this.listener.getLogger().println("\nInstalling SCD from: https://" + SM_HOST.substring(19).replaceAll("/$", "") + "/signingmanager/api-ui/v1/releases/noauth/ssm-scd-linux-x64/download \n");
-        executeCommand("curl -X GET  https://" + SM_HOST.substring(19).replaceAll("/$", "") + "/signingmanager/api-ui/v1/releases/noauth/ssm-scd-linux-x64/download -o ssm-scd");
+        this.listener.getLogger().println("\nInstalling SCD from: https://" + SM_HOST.substring(19).replaceAll("/$", "")
+                + "/signingmanager/api-ui/v1/releases/noauth/ssm-scd-linux-x64/download \n");
+        executeCommand("curl -X GET  https://" + SM_HOST.substring(19).replaceAll("/$", "")
+                + "/signingmanager/api-ui/v1/releases/noauth/ssm-scd-linux-x64/download -o ssm-scd");
 
         if (result == 0)
 
@@ -104,32 +108,30 @@ public class Linux {
         return result;
     }
 
-
     public Integer createFile(String path, String str) {
 
-
-        File file = new File(path); //initialize File object and passing path as argument
+        File file = new File(path); // initialize File object and passing path as argument
         FileOutputStream fos = null;
         try {
 
-            if(file.createNewFile())
+            if (file.createNewFile())
                 ;
             try {
 
                 String name = file.getCanonicalPath();
 
-                fos = new FileOutputStream(name, false);  // true for append mode
+                fos = new FileOutputStream(name, false); // true for append mode
 
-                byte[] b = str.getBytes(StandardCharsets.UTF_8);        //converts string into bytes
+                byte[] b = str.getBytes(StandardCharsets.UTF_8); // converts string into bytes
 
-                fos.write(b);           //writes bytes into file
+                fos.write(b); // writes bytes into file
 
-                fos.close();            //close the file
+                fos.close(); // close the file
 
                 return 0;
 
             } catch (Exception e) {
-                if (fos!=null)
+                if (fos != null)
                     fos.close();
                 e.printStackTrace(this.listener.error(e.getMessage()));
 
@@ -147,23 +149,21 @@ public class Linux {
 
     }
 
-
     public void setEnvVar(String key, String value) {
 
         try {
 
             Jenkins instance = Jenkins.get();
 
+            DescribableList<NodeProperty<?>, NodePropertyDescriptor> globalNodeProperties = instance
+                    .getGlobalNodeProperties();
 
-            DescribableList<NodeProperty<?>, NodePropertyDescriptor> globalNodeProperties = instance.getGlobalNodeProperties();
-
-            List<EnvironmentVariablesNodeProperty> envVarsNodePropertyList = globalNodeProperties.getAll(EnvironmentVariablesNodeProperty.class);
-
+            List<EnvironmentVariablesNodeProperty> envVarsNodePropertyList = globalNodeProperties
+                    .getAll(EnvironmentVariablesNodeProperty.class);
 
             EnvironmentVariablesNodeProperty newEnvVarsNodeProperty = null;
 
             EnvVars envVars = null;
-
 
             if (envVarsNodePropertyList == null || envVarsNodePropertyList.size() == 0) {
 
@@ -191,9 +191,7 @@ public class Linux {
 
     }
 
-
     public Integer executeCommand(String command) {
-
 
         try {
 
@@ -203,19 +201,19 @@ public class Linux {
 
             if (SM_API_KEY != null)
 
-                env.put("SM_API_KEY", SM_API_KEY);
+                env.put(Constants.API_KEY_ID, SM_API_KEY);
 
             if (SM_CLIENT_CERT_PASSWORD != null)
 
-                env.put("SM_CLIENT_CERT_PASSWORD", SM_CLIENT_CERT_PASSWORD);
+                env.put(Constants.CLIENT_CERT_PASSWORD_ID, SM_CLIENT_CERT_PASSWORD);
 
             if (SM_CLIENT_CERT_FILE != null)
 
-                env.put("SM_CLIENT_CERT_FILE", SM_CLIENT_CERT_FILE);
+                env.put(Constants.CLIENT_CERT_FILE_ID, SM_CLIENT_CERT_FILE);
 
             if (SM_HOST != null)
 
-                env.put("SM_HOST", SM_HOST);
+                env.put(Constants.HOST_ID, SM_HOST);
 
             env.put("PATH", System.getenv("PATH") + ":/" + dir + "/smtools-linux-x64/");
 
@@ -225,12 +223,10 @@ public class Linux {
 
             Process process = processBuilder.start();
 
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
-
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
 
             String line;
-
 
             while ((line = reader.readLine()) != null) {
 
@@ -266,20 +262,19 @@ public class Linux {
 
     }
 
-
     public void deleteFiles() {
 
         File directory = new File("/" + System.getProperty("user.name") + "/.gnupg");
 
         File[] files = directory.listFiles();
 
-        if(files==null)
+        if (files == null)
             return;
         for (File f : files) {
 
             if (f.getName().contains("kbx")) {
 
-                if(f.delete())
+                if (f.delete())
                     this.listener.getLogger().println("\nDeleted file: " + f.getName() + "\n");
                 else
                     this.listener.getLogger().println("\nFailed to delete file: " + f.getName() + "\n");
@@ -289,9 +284,7 @@ public class Linux {
 
     }
 
-
     public Integer call(String os) throws IOException {
-
 
         result = install(os);
 
@@ -327,7 +320,6 @@ public class Linux {
 
         this.listener.getLogger().println("\nCreating GPG Config File\n");
 
-
         String str = "verbose\ndebug-all\n" +
 
                 "log-file /" + System.getProperty("user.name") + "/.gnupg/gpg-agent.log\n" +
@@ -336,13 +328,12 @@ public class Linux {
 
         String configPath = "/" + System.getProperty("user.name") + "/.gnupg/gpg-agent.conf";
 
-
         result = createFile(configPath, str);
-
 
         if (result == 0)
 
-            this.listener.getLogger().println("\nGPG config file successfully created at location: " + configPath + "\n");
+            this.listener.getLogger()
+                    .println("\nGPG config file successfully created at location: " + configPath + "\n");
 
         else {
 
@@ -365,4 +356,3 @@ public class Linux {
     }
 
 }
-
