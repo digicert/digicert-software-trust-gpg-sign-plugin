@@ -76,11 +76,11 @@ public class Linux {
 
         if (result == 0)
 
-            this.listener.getLogger().println("\nSMCTL Istallation Complete\n");
+            this.listener.getLogger().println("\nSMCTL Installation Complete\n");
 
         else {
 
-            this.listener.getLogger().println("\nSMCTL Istallation Failed\n");
+            this.listener.getLogger().println("\nSMCTL Installation Failed\n");
 
             return result;
 
@@ -95,15 +95,21 @@ public class Linux {
 
         if (result == 0)
 
-            this.listener.getLogger().println("\nSCD Istallation Complete\n");
+            this.listener.getLogger().println("\nSCD Installation Complete\n");
 
         else {
 
-            this.listener.getLogger().println("\nSCD Istallation Failed\n");
+            this.listener.getLogger().println("\nSCD Installation Failed\n");
 
         }
 
-        result = executeCommand("sudo chmod -R +x " + dir);
+        String userName = System.getProperty("user.name");
+
+        if (userName.equals("root")) {
+            result = executeCommand("chmod -R +x " + dir);
+        } else {
+            result = executeCommand("sudo chmod -R +x " + dir);
+        }
 
         return result;
     }
@@ -153,40 +159,45 @@ public class Linux {
 
         try {
 
-            Jenkins instance = Jenkins.get();
-
-            DescribableList<NodeProperty<?>, NodePropertyDescriptor> globalNodeProperties = instance
-                    .getGlobalNodeProperties();
-
-            List<EnvironmentVariablesNodeProperty> envVarsNodePropertyList = globalNodeProperties
-                    .getAll(EnvironmentVariablesNodeProperty.class);
-
-            EnvironmentVariablesNodeProperty newEnvVarsNodeProperty = null;
-
-            EnvVars envVars = null;
-
-            if (envVarsNodePropertyList == null || envVarsNodePropertyList.size() == 0) {
-
-                newEnvVarsNodeProperty = new hudson.slaves.EnvironmentVariablesNodeProperty();
-
-                globalNodeProperties.add(newEnvVarsNodeProperty);
-
-                envVars = newEnvVarsNodeProperty.getEnvVars();
-
-            } else {
-
-                envVars = envVarsNodePropertyList.get(0).getEnvVars();
-
+            Jenkins instance = null;
+            try {
+                instance = Jenkins.get();
+            } catch (IllegalStateException e) {
+                this.listener.getLogger().println("Could not set environment variable: " + key + " with value: " + value
+                        + ". This is due to the plugin running on a slave node. This will have to be manually applied.");
             }
 
-            envVars.put(key, value);
+            if (instance != null) {
+                DescribableList<NodeProperty<?>, NodePropertyDescriptor> globalNodeProperties = instance
+                        .getGlobalNodeProperties();
 
-            instance.save();
+                List<EnvironmentVariablesNodeProperty> envVarsNodePropertyList = globalNodeProperties
+                        .getAll(EnvironmentVariablesNodeProperty.class);
 
+                EnvironmentVariablesNodeProperty newEnvVarsNodeProperty = null;
+
+                EnvVars envVars = null;
+
+                if (envVarsNodePropertyList == null || envVarsNodePropertyList.size() == 0) {
+
+                    newEnvVarsNodeProperty = new hudson.slaves.EnvironmentVariablesNodeProperty();
+
+                    globalNodeProperties.add(newEnvVarsNodeProperty);
+
+                    envVars = newEnvVarsNodeProperty.getEnvVars();
+
+                } else {
+
+                    envVars = envVarsNodePropertyList.get(0).getEnvVars();
+
+                }
+
+                envVars.put(key, value);
+
+                instance.save();
+            }
         } catch (IOException e) {
-
             e.printStackTrace(this.listener.error(e.getMessage()));
-
         }
 
     }
@@ -290,11 +301,11 @@ public class Linux {
 
         if (result == 0)
 
-            this.listener.getLogger().println("\nClient Tools Istallation Complete\n");
+            this.listener.getLogger().println("\nClient Tools Installation Complete\n");
 
         else {
 
-            this.listener.getLogger().println("\nClient Tools Istallation Failed\n");
+            this.listener.getLogger().println("\nClient Tools Installation Failed\n");
 
             return result;
 
@@ -302,15 +313,21 @@ public class Linux {
 
         this.listener.getLogger().println("\nInstalling and configuring GPG Tool Suite\n");
 
-        result = executeCommand("sudo apt-get --yes --assume-yes install gnupg");
+        String userName = System.getProperty("user.name");
+
+        if (userName.equals("root")) {
+            result = executeCommand("apt-get --yes --assume-yes install gnupg");
+        } else {
+            result = executeCommand("sudo apt-get --yes --assume-yes install gnupg");
+        }
 
         if (result == 0)
 
-            this.listener.getLogger().println("\nGPG Istallation Complete\n");
+            this.listener.getLogger().println("\nGPG Installation Complete\n");
 
         else {
 
-            this.listener.getLogger().println("\nGPG Istallation Failed\n");
+            this.listener.getLogger().println("\nGPG Installation Failed\n");
 
             return result;
 
