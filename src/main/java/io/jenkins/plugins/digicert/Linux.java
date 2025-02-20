@@ -164,7 +164,7 @@ public class Linux {
                 instance = Jenkins.get();
             } catch (IllegalStateException e) {
                 this.listener.getLogger().println("Could not set environment variable: " + key + " with value: " + value
-                        + ". This is due to the plugin running on a slave node. This will have to be manually applied.");
+                        + ". This is due to the plugin running on a slave node. This will have to be manually defined in the pipeline as an environment variable.");
             }
 
             if (instance != null) {
