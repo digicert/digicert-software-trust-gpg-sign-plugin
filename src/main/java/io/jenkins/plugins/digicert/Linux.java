@@ -66,11 +66,17 @@ public class Linux {
 
         this.listener.getLogger().println("\nAgent type: " + os);
 
+        String host = SM_HOST.trim().substring(19).replaceAll("/$", "");
+        String smctlDownloadUrl = String.format(
+                "https://%s/signingmanager/api-ui/v1/releases/noauth/smtools-linux-x64.tar.gz/download",
+                host);
+
         this.listener.getLogger()
-                .println("\nIstalling SMCTL from: https://" + SM_HOST.substring(19).replaceAll("/$", "")
-                        + "/signingmanager/api-ui/v1/releases/noauth/smtools-linux-x64.tar.gz/download \n");
-        executeCommand("curl -X GET https://" + SM_HOST.substring(19).replaceAll("/$", "")
-                + "/signingmanager/api-ui/v1/releases/noauth/smtools-linux-x64.tar.gz/download/ -o smtools-linux-x64.tar.gz");
+                .println("\nInstalling SMCTL from: " + smctlDownloadUrl);
+        result = executeCommand("curl -X GET " + smctlDownloadUrl + " -o smtools-linux-x64.tar.gz");
+        if (result != 0) {
+            return result;
+        }
 
         result = executeCommand("tar xvf smtools-linux-x64.tar.gz > /dev/null");
 
@@ -88,19 +94,16 @@ public class Linux {
 
         dir = dir + File.separator + "smtools-linux-x64";
 
-        this.listener.getLogger().println("\nInstalling SCD from: https://" + SM_HOST.substring(19).replaceAll("/$", "")
-                + "/signingmanager/api-ui/v1/releases/noauth/ssm-scd-linux-x64/download \n");
-        executeCommand("curl -X GET  https://" + SM_HOST.substring(19).replaceAll("/$", "")
-                + "/signingmanager/api-ui/v1/releases/noauth/ssm-scd-linux-x64/download -o ssm-scd");
+        String scdDownloadUrl = String
+                .format("https://%s/signingmanager/api-ui/v1/releases/noauth/ssm-scd-linux-x64/download", host);
+        this.listener.getLogger().println("\nInstalling SCD from: " + scdDownloadUrl);
+        result = executeCommand("curl -X GET " + scdDownloadUrl + " -o ssm-scd");
 
         if (result == 0)
-
             this.listener.getLogger().println("\nSCD Installation Complete\n");
-
         else {
-
             this.listener.getLogger().println("\nSCD Installation Failed\n");
-
+            return result;
         }
 
         String userName = System.getProperty("user.name");

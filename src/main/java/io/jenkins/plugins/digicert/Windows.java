@@ -59,11 +59,17 @@ public class Windows {
 
     public Integer install(String os) {
         this.listener.getLogger().println("\nAgent type: " + os);
+
+        String host = SM_HOST.trim().substring(19).replaceAll("/$", "");
+        String smctlDownloadUrl = String.format(
+                "https://%s/signingmanager/api-ui/v1/releases/noauth/smtools-windows-x64.msi/download",
+                host);
         this.listener.getLogger()
-                .println("\nInstalling SMCTL from: https://" + SM_HOST.substring(19).replaceAll("/$", "")
-                        + "/signingmanager/api-ui/v1/releases/noauth/smtools-windows-x64.msi/download \n");
-        executeCommand("curl -X GET  https://" + SM_HOST.substring(19).replaceAll("/$", "")
-                + "/signingmanager/api-ui/v1/releases/noauth/smtools-windows-x64.msi/download -o smtools-windows-x64.msi");
+                .println("\nInstalling SMCTL from: " + smctlDownloadUrl);
+        int result = executeCommand("curl -X GET " + smctlDownloadUrl + " -o smtools-windows-x64.msi");
+        if (result != 0) {
+            return result;
+        }
         result = executeCommand("msiexec /i smtools-windows-x64.msi /quiet /qn");
         if (result == 0)
             this.listener.getLogger().println("\nSMCTL Installation Complete\n");
@@ -76,10 +82,13 @@ public class Windows {
             if (!destFile.delete())
                 return 1;
         }
-        this.listener.getLogger().println("\nInstalling SCD from: https://" + SM_HOST.substring(19).replaceAll("/$", "")
-                + "/signingmanager/api-ui/v1/releases/noauth/ssm-scd-windows-x64/download \n");
-        executeCommand("curl -X GET  https://" + SM_HOST.substring(19).replaceAll("/$", "")
-                + "/signingmanager/api-ui/v1/releases/noauth/ssm-scd-windows-x64/download -o ssm-scd.exe");
+        String scdDownloadUrl = String
+                .format("https://%s/signingmanager/api-ui/v1/releases/noauth/ssm-scd-windows-x64/download", host);
+        this.listener.getLogger().println("\nInstalling SCD from: " + scdDownloadUrl);
+        result = executeCommand("curl -X GET  " + scdDownloadUrl + " -o ssm-scd.exe");
+        if (result != 0) {
+            return result;
+        }
         result = moveFile();
 
         if (SM_API_KEY != null && SM_CLIENT_CERT_FILE != null && SM_CLIENT_CERT_PASSWORD != null) {
